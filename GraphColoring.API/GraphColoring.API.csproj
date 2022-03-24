@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <ProjectReference Include="..\GraphColoring.Infrastructure\GraphColoring.Infrastructure.csproj" />
+    <ProjectReference Include="..\GraphColoring.Domain\GraphColoring.Domain.csproj" />
+    <ProjectReference Include="..\GraphColoring.Application\GraphColoring.Application.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="5.0.12">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <UserSecretsId>a8bacfb6-fd8e-45a4-bc05-306f44255bc2</UserSecretsId>
+  </PropertyGroup>
+
+
+</Project>
