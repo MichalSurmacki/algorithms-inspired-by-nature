@@ -24,7 +24,7 @@ namespace GraphColoring.API.Controllers
 
         [HttpGet]
         [Route("Greedy")]
-        public async Task<IActionResult> StartGreedyAlgorithm([FromQuery] int graphId)
+        public async Task<IActionResult> PerformGreedyAlgorithm([FromQuery] int graphId)
         {
             var response = await _algorithmService.PerformGreedyAlgorithm(graphId);
             return Ok(response);

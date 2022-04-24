@@ -15,6 +15,7 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 namespace GraphColoring.Application.Services
 {
@@ -80,9 +81,9 @@ namespace GraphColoring.Application.Services
             return new AlgorithmResponse(coloredNodesList);
         }
 
-        public Task<AlgorithmResponse> PerformGreedyAlgorithm(int graphId)
+        public async Task<AlgorithmResponse> PerformGreedyAlgorithm(int graphId)
         {
-            var g = _context.Graphs.Where(g => g.Id.Equals(graphId)).FirstOrDefault();
+            var g = await _context.Graphs.Where(g => g.Id.Equals(graphId)).FirstAsync();
             var graph = _mapper.Map<GraphReadDto>(g);
 
             var watch = Stopwatch.StartNew();
@@ -103,7 +104,7 @@ namespace GraphColoring.Application.Services
             SaveResultToDatabase(AlgorithmName.Greedy, coloredNodesList, elapsedTime, jsonInfo, g, graph.NumberOfColorsInGraph);
 
             var response = new AlgorithmResponse(coloredNodesList);
-            return Task.FromResult(response);
+            return response;
         }
 
         public Task<AlgorithmResponse> PerformLargestFirstAlgorithm(int graphId)

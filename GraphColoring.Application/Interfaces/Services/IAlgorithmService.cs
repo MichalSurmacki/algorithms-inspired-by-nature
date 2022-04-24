@@ -11,6 +11,6 @@ namespace GraphColoring.Application.Interfaces.Services
         Task<AlgorithmResponse> PerformLargestFirstAlgorithm(int graphId);
 
         Task<AlgorithmResponse> PerformABCAlgorithm(int graphId, int employeeBeesSize, int employeeBeesNeighborSize, int onLookerBeesSize, 
-            int onLookerBeesNeighborSize, int scoutBeesSize, int maxCicles, int onLookerBeesFavouredSolutionsNumber);
+            int onLookerBeesNeighborSize, int scoutBeesSize, int maxCycles, int onLookerBeesFavouredSolutionsNumber);
     }
 }

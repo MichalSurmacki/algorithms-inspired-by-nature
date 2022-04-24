@@ -1,15 +1,10 @@
 ﻿using GraphColoring.Application.Dtos.Graphs.Requests;
 using GraphColoring.Application.Dtos.Graphs.Responses;
-using GraphColoring.Application.Interfaces;
 using GraphColoring.Application.Interfaces.Services;
-using GraphColoring.Domain.Entities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace GraphColoring.API.Controllers
@@ -28,7 +23,7 @@ namespace GraphColoring.API.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateGraph(CreateGraphRequest request)
         {
-            var response = await _graphService.LoadGraph(request);
+            var response = await _graphService.CreateGraph(request);
             return Ok(response);
         }
 
@@ -37,7 +32,7 @@ namespace GraphColoring.API.Controllers
         public async Task<IActionResult> CreateGraphFromDIMACS([Required] IFormFile fileDIMACS)
         {
             CreateGraphResponse response;
-            using(var fileSteam = fileDIMACS.OpenReadStream())
+            await using(var fileSteam = fileDIMACS.OpenReadStream())
             {
                 response = await _graphService.LoadGraphFromDIMACS(new StreamReader(fileSteam), fileDIMACS.FileName);
             }
@@ -49,6 +44,12 @@ namespace GraphColoring.API.Controllers
         {
             var response = await _graphService.GetGraphById(id);
             return Ok(response);
+        }
+        
+        [HttpGet("Generate")]
+        public async Task<IActionResult> GenerateRandomGraph([FromRoute] int id)
+        {
+            return Ok();
         }
     }
 }

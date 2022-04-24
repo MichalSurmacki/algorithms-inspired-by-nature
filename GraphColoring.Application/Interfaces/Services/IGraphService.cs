@@ -7,7 +7,7 @@ namespace GraphColoring.Application.Interfaces.Services
 {
     public interface IGraphService
     {
-        Task<CreateGraphResponse> LoadGraph(CreateGraphRequest request);
+        Task<CreateGraphResponse> CreateGraph(CreateGraphRequest request);
         Task<CreateGraphResponse> LoadGraphFromDIMACS(StreamReader streamReaderFileDIMACS, string graphName);
         Task<GetGraphByIdResponse> GetGraphById(int id);
     }

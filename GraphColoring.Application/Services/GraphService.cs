@@ -10,6 +10,7 @@ using GraphColoring.Application.Dtos.Graphs.Responses;
 using GraphColoring.Application.Interfaces;
 using GraphColoring.Application.Interfaces.Services;
 using GraphColoring.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace GraphColoring.Application.Services
 {
@@ -26,9 +27,7 @@ namespace GraphColoring.Application.Services
 
         public async Task<GetGraphByIdResponse> GetGraphById(int id)
         {
-            Graph graph = _context.Graphs
-                                .Where(g => g.Id.Equals(id))
-                                .FirstOrDefault();
+            Graph graph = await _context.Graphs.Where(g => g.Id.Equals(id)).FirstAsync();
 
             var g = _mapper.Map<GraphReadDto>(graph);
             var response = new GetGraphByIdResponse(g.AdjacencyMatrix);
@@ -36,7 +35,7 @@ namespace GraphColoring.Application.Services
             return response;
         }
 
-        public async Task<CreateGraphResponse> LoadGraph(CreateGraphRequest request)
+        public async Task<CreateGraphResponse> CreateGraph(CreateGraphRequest request)
         {
             Graph graph = new Graph(request.AdjacencyMatrix, request.GraphName);
             //TODO co z async-await
@@ -119,7 +118,7 @@ namespace GraphColoring.Application.Services
                 return new CreateGraphResponse(System.Net.HttpStatusCode.UnprocessableEntity);
             }
 
-            Graph graph = new Graph(adjacencyMatrix.Select(x => x.ToArray()).ToArray(), graphName);
+            Graph graph = new Graph(adjacencyMatrix, graphName);
             await _context.Graphs.AddAsync(graph);
             _context.SaveChanges();
 

@@ -1,8 +1,10 @@
-﻿namespace GraphColoring.Application.Dtos.Graphs.Requests
+﻿using System.Collections.Generic;
+
+namespace GraphColoring.Application.Dtos.Graphs.Requests
 {
     public class CreateGraphRequest
     {
-        public int[][] AdjacencyMatrix { get; set; }
+        public List<List<int>> AdjacencyMatrix { get; set; }
         public string GraphName { get; set; }
     }
 }
