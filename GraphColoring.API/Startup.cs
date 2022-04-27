@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using GraphColoring.API.Middleware;
 using GraphColoring.Application;
 using GraphColoring.Infrastructure;
 using Microsoft.AspNetCore.Builder;
@@ -29,7 +30,9 @@ namespace GraphColoring.API
         {
             services.AddControllers();
             services.AddSwaggerGen();
-
+            
+            // add exceptionMiddleware for exception handling
+            services.AddScoped<ExceptionMiddleware>();
             // add application config
             services.AddApplication(Configuration);
             // add infrastructure config
@@ -46,6 +49,8 @@ namespace GraphColoring.API
             app.UseSwagger();
             app.UseSwaggerUI();
 
+            app.UseMiddleware<ExceptionMiddleware>();
+            
             app.UseHttpsRedirection();
 
             app.UseRouting();

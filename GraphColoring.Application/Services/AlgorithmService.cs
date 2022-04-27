@@ -83,28 +83,45 @@ namespace GraphColoring.Application.Services
 
         public async Task<AlgorithmResponse> PerformGreedyAlgorithm(int graphId)
         {
-            var g = await _context.Graphs.Where(g => g.Id.Equals(graphId)).FirstAsync();
-            var graph = _mapper.Map<GraphReadDto>(g);
+            // var g = await _context.Graphs.Where(g => g.Id.Equals(graphId)).FirstAsync();
+            // var graph = _mapper.Map<GraphReadDto>(g);
 
-            var watch = Stopwatch.StartNew();
-            Greedy.Start(ref graph);
-            watch.Stop();
-            var elapsedTime = watch.ElapsedMilliseconds;
+            // var watch = Stopwatch.StartNew();
+
+
+            var adjM = new List<List<int>>();
+            adjM.Add(new List<int>(new int[] {0,0,1,0,0}));
+            adjM.Add(new List<int>(new int[] {0,0,1,0,1}));
+            adjM.Add(new List<int>(new int[] {1,1,0,1,0}));
+            adjM.Add(new List<int>(new int[] {0,0,1,0,0}));
+            adjM.Add(new List<int>(new int[] {0,1,0,0,0}));
+            GraphDto gsd = new GraphDto(adjM);
+            // Greedy.Start(ref graph);
+            gsd.GraphColors = Greedy.Start(gsd.AdjacencyMatrix);
+
+            var ss = LargestFirst.Start(gsd.AdjacencyMatrix);
+
+            var sss = KempeChainNeighborhood.GetNeighbor(gsd.AdjacencyMatrix, gsd.GraphColors);
+
+            int x = 0;
+            // watch.Stop();
+            // var elapsedTime = watch.ElapsedMilliseconds;
 
             // dodatkowe sprawdzenie rozwiązania
-            var conflicts = graph.Nodes.Where(n => n.Neighbors.Any(nn => nn.ColorNumber == n.ColorNumber)).Select(n => n.Id).ToList();
-            if (conflicts.Count > 0)
-            {
-                throw new Exception("Graph wasn't colored properly... Something went wrong...");
-            }
+            // var conflicts = graph.Nodes.Where(n => n.Neighbors.Any(nn => nn.ColorNumber == n.ColorNumber)).Select(n => n.Id).ToList();
+            // if (conflicts.Count > 0)
+            // {
+                // throw new Exception("Graph wasn't colored properly... Something went wrong...");
+            // }
 
-            string jsonInfo = $"{elapsedTime},{AlgorithmName.Greedy},{graphId},{graph.NumberOfColorsInGraph}";
-            var coloredNodesList = graph.GetColoredNodesList();
+            // string jsonInfo = $"{elapsedTime},{AlgorithmName.Greedy},{graphId},{graph.NumberOfColorsInGraph}";
+            // var coloredNodesList = graph.GetColoredNodesList();
             // save result to database
-            SaveResultToDatabase(AlgorithmName.Greedy, coloredNodesList, elapsedTime, jsonInfo, g, graph.NumberOfColorsInGraph);
+            // SaveResultToDatabase(AlgorithmName.Greedy, coloredNodesList, elapsedTime, jsonInfo, g, graph.NumberOfColorsInGraph);
 
-            var response = new AlgorithmResponse(coloredNodesList);
-            return response;
+            // var response = new AlgorithmResponse(coloredNodesList);
+            // return response;
+            throw new NotImplementedException();
         }
 
         public Task<AlgorithmResponse> PerformLargestFirstAlgorithm(int graphId)

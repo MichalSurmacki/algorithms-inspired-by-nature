@@ -11,34 +11,48 @@ namespace GraphColoring.Application.Algorithms
     {
         public static void Start(ref GraphReadDto graph)
         {
-            //graph.Nodes.Shuffle();
-            graph.Nodes = graph.Nodes.OrderBy(a => Guid.NewGuid()).ToList();
-            foreach (GNodeDto node in graph.Nodes)
+            throw new NotImplementedException();
+        }
+
+        public static int[] Start(List<List<int>> adjacencyMatrix)
+        {
+            var graphColors = new int[adjacencyMatrix.Count];
+            
+            //get randomized array of indexes of nodes
+            var nodesIndexes = Enumerable
+                .Range(0, adjacencyMatrix.Count)
+                .OrderBy(x => Guid.NewGuid())
+                .ToArray();
+
+            foreach (var nodeIndex in nodesIndexes)
             {
-                List<int> colors = new List<int>();
-                //sprawdz czy nie polaczony z sasiadami
-                foreach(GNodeDto neighbor in node.Neighbors)
+                //get neighbours indexes of random node 
+                var neighboursIndexes = adjacencyMatrix[nodeIndex]
+                    .Select((r ,i) => new {r, i})
+                    .Where(x => x.r == 1)
+                    .Select(x => x.i).ToList();    
+                
+                //get list of colors of neighbours
+                var neighboursColors = neighboursIndexes
+                    .Where(x => graphColors[x] != 0)
+                    .Select(x => graphColors[x])
+                    .Distinct()
+                    .ToList()
+                    .OrderBy(x => x)
+                    .ToList();
+
+                //get lowest available color
+                int lowest = 1;
+                foreach (var color in neighboursColors)
                 {
-                    if (neighbor.ColorNumber != -1)
-                        colors.Add(neighbor.ColorNumber);
-                }
-                //kolory sąsiadów
-                colors.Sort();
-                colors = colors.Distinct().ToList();
-                int lowest = 0;                
-                for(int i=0; i<colors.Count; i++)
-                {
-                    if (colors[i] == lowest)
+                    if (color == lowest)
                         lowest++;
                     else
                         break;
                 }
-                node.ColorNumber = lowest;
-                //colorsClasses[lowest]++;
+                graphColors[nodeIndex] = lowest;
             }
-            graph.Nodes = graph.Nodes.OrderBy(n => n.Id).ToList(); // reverse shuffle 
-            graph.UpdateColorClassesConut();
-            //graph.Nodes = graph.Nodes.OrderBy(n => n.Id).ToList();
+            return graphColors;
         }
     }
 }

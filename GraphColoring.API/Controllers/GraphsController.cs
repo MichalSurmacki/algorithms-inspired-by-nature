@@ -1,4 +1,5 @@
-﻿using GraphColoring.Application.Dtos.Graphs.Requests;
+﻿using System;
+using GraphColoring.Application.Dtos.Graphs.Requests;
 using GraphColoring.Application.Dtos.Graphs.Responses;
 using GraphColoring.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Http;
@@ -49,7 +50,8 @@ namespace GraphColoring.API.Controllers
         [HttpGet("Generate")]
         public async Task<IActionResult> GenerateRandomGraph([FromRoute] int id)
         {
-            return Ok();
+            throw new NotImplementedException("ss");
+            // return Ok();
         }
     }
 }

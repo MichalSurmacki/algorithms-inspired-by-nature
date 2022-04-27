@@ -2,7 +2,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\GraphColoring.Infrastructure\GraphColoring.Infrastructure.csproj" />
-    <ProjectReference Include="..\GraphColoring.Domain\GraphColoring.Domain.csproj" />
     <ProjectReference Include="..\GraphColoring.Application\GraphColoring.Application.csproj" />
   </ItemGroup>
 
