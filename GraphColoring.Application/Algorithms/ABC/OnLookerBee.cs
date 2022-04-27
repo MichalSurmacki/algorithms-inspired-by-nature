@@ -52,9 +52,7 @@ namespace GraphColoring.Application.Algorithms.ABC
             }
             for (int i = 0; i < b.NumberOfNeighborsToLookup; i++)
             {
-                Debug.WriteLine(DateTime.Now.ToString() + " " + b.LogInfo + $" | OnLookerBee {b.Id},{Thread.CurrentThread.ManagedThreadId}|  {i}  | Rozpoczecie szukania sasiada");
                 var neighbor = KempeChainNeighborhood.GetNeighbor(b.InitialSolution);
-                Debug.WriteLine(DateTime.Now.ToString() + " " + b.LogInfo + $" | OnLookerBee {b.Id},{Thread.CurrentThread.ManagedThreadId}|  {i}  | Porownanie znalezionego sasiada z najlepszym rozwiazaniem");
                 b.SetSolutionIfBetter(neighbor);
             }
             return Task.CompletedTask;

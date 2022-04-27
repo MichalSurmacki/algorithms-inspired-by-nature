@@ -35,9 +35,7 @@ namespace GraphColoring.Application.Algorithms.ABC
                 throw new TaskCanceledException("RawGraph cant be null...");
             }
             var initGraphCp = b.RawGraph.MakeACopy();
-            Debug.WriteLine(DateTime.Now.ToString() + " " + b.LogInfo + $" | ScoutBee {b.Id},{Thread.CurrentThread.ManagedThreadId}| Rozpoczecie szukania rozwiązania losowego");
             Greedy.Start(ref initGraphCp);
-            Debug.WriteLine(DateTime.Now.ToString() + " " + b.LogInfo + $" | ScoutBee {b.Id},{Thread.CurrentThread.ManagedThreadId}| Znaleziono rozwiązanie losowe");
             b.FoundSolution = initGraphCp;
             return Task.CompletedTask;
         }

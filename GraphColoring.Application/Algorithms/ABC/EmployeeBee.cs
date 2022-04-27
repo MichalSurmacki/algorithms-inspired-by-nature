@@ -42,7 +42,6 @@ namespace GraphColoring.Application.Algorithms.ABC
 
         public bool SetSolutionIfBetter(GraphReadDto solution)
         {
-            Debug.WriteLine(DateTime.Now.ToString() + " porównanie best: " + BestSolution.NumberOfColorsInGraph + " ze znalezionym: " + solution.NumberOfColorsInGraph);
             if (solution.NumberOfColorsInGraph < BestSolution.NumberOfColorsInGraph)
             {
                 BestSolution = solution;
@@ -61,18 +60,11 @@ namespace GraphColoring.Application.Algorithms.ABC
             return false;
         }
 
-        public void AsignBestSolToInitialSol()
-        {
-            InitialSolution = BestSolution;
-        }
-
         private static Task BeeAction(EmployeeBee b)
         {
             for (int i = 0; i < b.NumberOfNeighborsToLookup; i++)
             {
-                Debug.WriteLine(DateTime.Now.ToString() + " " + b.LogInfo + $" | EmployeeBee {b.Id},{Thread.CurrentThread.ManagedThreadId}|  {i}  | Rozpoczecie szukania sasiada");
                 var neighbor = KempeChainNeighborhood.GetNeighbor(b.InitialSolution);
-                Debug.WriteLine(DateTime.Now.ToString() + " " + b.LogInfo + $" | EmployeeBee {b.Id},{Thread.CurrentThread.ManagedThreadId}|  {i}  | Porownanie znalezionego sasiada z najlepszym rozwiazaniem");
                 b.SetSolutionIfBetter(neighbor);
             }
             return Task.CompletedTask;
