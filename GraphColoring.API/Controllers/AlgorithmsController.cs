@@ -14,12 +14,10 @@ namespace GraphColoring.API.Controllers
     public class AlgorithmsController : ControllerBase
     {
         private readonly IAlgorithmService _algorithmService;
-        private readonly IGraphService _graphService;
 
-        public AlgorithmsController(IAlgorithmService algorithmService, IGraphService graphService)
+        public AlgorithmsController(IAlgorithmService algorithmService)
         {
             _algorithmService = algorithmService;
-            _graphService = graphService;
         }
 
         [HttpGet]

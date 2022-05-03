@@ -1,72 +1,50 @@
-﻿using GraphColoring.Application.Dtos.Graphs;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Text;
-using System.Threading;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace GraphColoring.Application.Algorithms.ABC
 {
     public class EmployeeBee
     {
-        public string Id { get; set; }
-        public string LogInfo { get; set; }
-        public GraphReadDto BestSolution { get; private set; }
-        public GraphReadDto InitialSolution { get; private set; }
-        public Task TaskAction { get; private set; }
-        public float OnLookerPropability { get; private set; }
-        // p-stwo tego, że rozwiązanie będzie preferowane przez pszczoły obserwatorki
-        public float OverallScore { get => OnLookerPropability / BestSolution.NumberOfColorsInGraph; }
-        public int NumberOfNeighborsToLookup { get; private set; }
-        public int CiclesCountWithoutImprove { get; private set; }
-        public bool IsChangeNecessary { get; private set; }
-
-        public EmployeeBee(GraphReadDto initialSolution, int numberOfNeighborsToLookup, float chance, string id)
+        private readonly List<List<int>> _adjacencyMatrix;
+        public int NumberOfNeighborsToLookup { get; }
+        public int[] InitialSolution { get; private set; }
+        public int InitialSolutionColorsCount { get; private set; }
+        public int[] Solution { get; private set; }
+        public float Score { get; private set; }
+        public bool IsChangeToScoutNecessary { get; private set; }
+        
+        public EmployeeBee(int numberOfNeighborsToLookup, List<List<int>> adjacencyMatrix, int[] initialSolution)
         {
-            Id = id;
-            IsChangeNecessary = false;
-            CiclesCountWithoutImprove = 0;
-            InitialSolution = initialSolution;
-            BestSolution = initialSolution;
             NumberOfNeighborsToLookup = numberOfNeighborsToLookup;
-            OnLookerPropability = chance;
-            TaskAction = new Task(async () => await BeeAction(this));
+            _adjacencyMatrix = adjacencyMatrix;
+            InitialSolution = initialSolution;
+            InitialSolutionColorsCount = initialSolution.Distinct().ToList().Count;
         }
-
-        public void SetTaskAction(string logInfo)
+        
+        public Task Action()
         {
-            LogInfo = logInfo;
-            TaskAction = new Task(async () => await BeeAction(this));
-        }
+            for (var i = 0; i < NumberOfNeighborsToLookup; i++)
+            {
+                var newSolution = KempeChainNeighborhood.GetNeighbor(_adjacencyMatrix, InitialSolution);
+                var newSolutionColorsCount = newSolution.Distinct().ToList().Count;
+                if (newSolutionColorsCount < InitialSolutionColorsCount)
+                {
+                    Solution = newSolution;
+                    var rnd = new Random();
+                    InitialSolution = Solution;
+                    InitialSolutionColorsCount = Solution.Distinct().ToList().Count;
+                    var chance = (float) rnd.NextDouble();
+                    Score = chance / InitialSolutionColorsCount;
+                }
+            }
 
-        public bool SetSolutionIfBetter(GraphReadDto solution)
-        {
-            if (solution.NumberOfColorsInGraph < BestSolution.NumberOfColorsInGraph)
+            if (Solution == null)
             {
-                BestSolution = solution;
-                CiclesCountWithoutImprove = 0;
-                return true;
+                IsChangeToScoutNecessary = true;
             }
-            if (solution.NumberOfColorsInGraph == BestSolution.NumberOfColorsInGraph)
-            {
-                CiclesCountWithoutImprove = 0;
-            }
-            CiclesCountWithoutImprove++;
-            if (CiclesCountWithoutImprove == NumberOfNeighborsToLookup)
-            {
-                IsChangeNecessary = true;
-            }
-            return false;
-        }
-
-        private static Task BeeAction(EmployeeBee b)
-        {
-            for (int i = 0; i < b.NumberOfNeighborsToLookup; i++)
-            {
-                var neighbor = KempeChainNeighborhood.GetNeighbor(b.InitialSolution);
-                b.SetSolutionIfBetter(neighbor);
-            }
+            
             return Task.CompletedTask;
         }
     }

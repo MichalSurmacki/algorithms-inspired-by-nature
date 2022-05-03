@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace GraphColoring.Application.Dtos.Graphs
@@ -19,10 +20,7 @@ namespace GraphColoring.Application.Dtos.Graphs
 
         public bool isColoringEqual(int[] collorsArray)
         {
-            
-            
-            
-            return false;
+            throw new NotImplementedException();
         }
     }
 }

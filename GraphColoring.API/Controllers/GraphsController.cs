@@ -1,6 +1,5 @@
 ﻿using System;
-using GraphColoring.Application.Dtos.Graphs.Requests;
-using GraphColoring.Application.Dtos.Graphs.Responses;
+using System.Collections.Generic;
 using GraphColoring.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -22,9 +21,9 @@ namespace GraphColoring.API.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateGraph(CreateGraphRequest request)
+        public async Task<IActionResult> CreateGraph([FromBody]List<List<int>> adjacencyMatrix, [FromBody] string name)
         {
-            var response = await _graphService.CreateGraph(request);
+            var response = await _graphService.CreateGraph(adjacencyMatrix, name);
             return Ok(response);
         }
 
@@ -32,7 +31,7 @@ namespace GraphColoring.API.Controllers
         [Route("File")]
         public async Task<IActionResult> CreateGraphFromDIMACS([Required] IFormFile fileDIMACS)
         {
-            CreateGraphResponse response;
+            int response;
             await using(var fileSteam = fileDIMACS.OpenReadStream())
             {
                 response = await _graphService.LoadGraphFromDIMACS(new StreamReader(fileSteam), fileDIMACS.FileName);
@@ -48,10 +47,9 @@ namespace GraphColoring.API.Controllers
         }
         
         [HttpGet("Generate")]
-        public async Task<IActionResult> GenerateRandomGraph([FromRoute] int id)
+        public async Task<IActionResult> GenerateRandomGraph([FromQuery] int size, [FromQuery] float density)
         {
-            throw new NotImplementedException("ss");
-            // return Ok();
+            throw new NotImplementedException("Not Implemented");
         }
     }
 }

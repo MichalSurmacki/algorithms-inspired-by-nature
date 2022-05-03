@@ -10,21 +10,13 @@ namespace GraphColoring.Application.Dtos.Algorithms.Responses
     {
         public string AlgorithmName { get; set; }
         public int ColorsCount { get; set; }
-        public List<int> ColoredNodes { get; set; }
-        public HttpStatusCode Status { get; set; }
-        public string ErrorMessage { get; set; }
+        public int[] ColoredNodes { get; set; }
 
-        public AlgorithmResponse(HttpStatusCode statusCode, string errorMessage = "")
+        public AlgorithmResponse(string algorithmName, int[] coloredNodes)
         {
-            Status = statusCode;
-            ErrorMessage = errorMessage;
-        }
-
-        public AlgorithmResponse(List<int> coloredNodes)
-        {
+            AlgorithmName = algorithmName;
             ColoredNodes = coloredNodes;
             ColorsCount = coloredNodes.Distinct().Count();
-            Status = HttpStatusCode.OK;
         }
     }
 }

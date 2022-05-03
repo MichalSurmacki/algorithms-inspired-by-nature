@@ -4,9 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
-using GraphColoring.Application.Dtos.Graphs;
-using GraphColoring.Application.Dtos.Graphs.Requests;
-using GraphColoring.Application.Dtos.Graphs.Responses;
 using GraphColoring.Application.Exceptions;
 using GraphColoring.Application.Interfaces;
 using GraphColoring.Application.Interfaces.Services;
@@ -18,46 +15,44 @@ namespace GraphColoring.Application.Services
     public class GraphService : IGraphService
     {
         private readonly IGraphColoringContext _context;
-        private readonly IMapper _mapper;
 
-        public GraphService(IGraphColoringContext context, IMapper mapper)
+        public GraphService(IGraphColoringContext context)
         {
             _context = context;
-            _mapper = mapper;
         }
 
-        public async Task<GetGraphByIdResponse> GetGraphById(int id)
+        public async Task<List<List<int>>> GetGraphById(int id)
         {
-            Graph graph = await _context.Graphs.Where(g => g.Id.Equals(id)).FirstAsync();
-
-            var g = _mapper.Map<GraphReadDto>(graph);
-            var response = new GetGraphByIdResponse(g.AdjacencyMatrix);
-
-            return response;
+            var graph = await _context.Graphs
+                .Where(g => g.Id.Equals(id))
+                .SingleAsync();
+            return graph.AdjacencyMatrix;
         }
 
-        public async Task<CreateGraphResponse> CreateGraph(CreateGraphRequest request)
+        public Task<int> GenereteRandomGraph(int size, int density)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<int> CreateGraph(List<List<int>> adjacencyMatrix, string name)
         {
             //check if adjacencyMatrix is Matrix 
-            if (request.AdjacencyMatrix.Any(row => row.Count != request.AdjacencyMatrix.Count))
-                throw new GraphValidationException("AdjacencyMatrix is not a Matrix...");
+            if (adjacencyMatrix.Any(row => row.Count != adjacencyMatrix.Count))
+                throw new BadRequestException("AdjacencyMatrix is not a Matrix...");
             
             //check if adjacencyMatrix has only 0 and 1
-            if (request.AdjacencyMatrix.Select(row => row.Select(item => item < 0 || item > 1).First()).First())
-                throw new GraphValidationException("AdjacencyMatrix values that are not binary...");
+            if (adjacencyMatrix.Select(row => row.Select(item => item < 0 || item > 1).First()).First())
+                throw new BadRequestException("AdjacencyMatrix has values that are not binary...");
             
-            var graph = new Graph(request.AdjacencyMatrix, request.GraphName);
+            var graph = new Graph(adjacencyMatrix, name);
             
             await _context.Graphs.AddAsync(graph);
             await _context.SaveChangesAsync();
 
-            var g = _mapper.Map<GraphReadDto>(graph);
-            var response = new CreateGraphResponse(g.Id);
-            
-            return response;
+            return graph.Id;
         }
 
-        public async Task<CreateGraphResponse> LoadGraphFromDIMACS(StreamReader streamReaderFileDIMACS, string graphName)
+        public async Task<int> LoadGraphFromDIMACS(StreamReader streamReaderFileDIMACS, string graphName)
         {
             throw new NotImplementedException();
             // List<List<int>> adjacencyMatrix = new List<List<int>>();

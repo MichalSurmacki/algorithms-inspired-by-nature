@@ -10,11 +10,10 @@ using GraphColoring.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using GraphColoring.Application.Exceptions;
 using Microsoft.EntityFrameworkCore;
 
 namespace GraphColoring.Application.Services
@@ -22,132 +21,126 @@ namespace GraphColoring.Application.Services
     public class AlgorithmService : IAlgorithmService
     {
         private readonly IGraphColoringContext _context;
-        private readonly IMapper _mapper;
 
-        public AlgorithmService(IGraphColoringContext context, IMapper mapper)
+        public AlgorithmService(IGraphColoringContext context)
         {
             _context = context;
-            _mapper = mapper;
         }
 
         public async Task<AlgorithmResponse> PerformABCAlgorithm(int graphId, int employeeBeesSize, int employeeBeesNeighborSize, int onLookerBeesSize,
-            int onLookerBeesNeighborSize, int scoutBeesSize, int maxCicles, int onLookerBeesFavouredSolutionsNumber)
+            int onLookerBeesNeighborSize, int scoutBeesSize, int maxCycles, int onLookerBeesFavouredSolutionsNumber = 0)
         {
             if(onLookerBeesFavouredSolutionsNumber > onLookerBeesSize)
             {
-                return new AlgorithmResponse(System.Net.HttpStatusCode.UnprocessableEntity, $"Nie uda sie przydzielić ({onLookerBeesSize}) pszczół OnLooker do ({onLookerBeesFavouredSolutionsNumber}) grup...");
+                throw new BadRequestException("Liczba pszczół przeszukiwaczek (onLookerBee) musi być większa lub równa ilości rozwiązań przeszukiwanych przez pszczoły tego typu.");
+            }
+            if(onLookerBeesFavouredSolutionsNumber < 1)
+            {
+                throw new BadRequestException("The number of favoured solutions by OnLookerBees cannot be less than 1...");
             }
 
-            var g = _context.Graphs.Where(g => g.Id.Equals(graphId)).FirstOrDefault();
-            var graph = _mapper.Map<GraphReadDto>(g);
-            var abcAlgorithm = new ABC(graph, employeeBeesSize, employeeBeesNeighborSize, onLookerBeesSize, 
-                onLookerBeesNeighborSize, scoutBeesSize, maxCicles, onLookerBeesFavouredSolutionsNumber);
+            var g = await _context.Graphs.Where(g => g.Id.Equals(graphId)).SingleAsync();
+            var gg = new GraphDto(g.AdjacencyMatrix);
             
             var watch = Stopwatch.StartNew();
-            var solution = await abcAlgorithm.Start();
+            gg.GraphColors = await ABC.Start(gg.AdjacencyMatrix, employeeBeesSize, employeeBeesNeighborSize, onLookerBeesSize, onLookerBeesNeighborSize, scoutBeesSize, maxCycles, onLookerBeesFavouredSolutionsNumber);
             watch.Stop();
             var elapsedTime = watch.ElapsedMilliseconds;
 
             // dodatkowe sprawdzenie rozwiązania
-            var conflicts = solution.Nodes.Where(n => n.Neighbors.Any(nn => nn.ColorNumber == n.ColorNumber)).Select(n => n.Id).ToList();
-            if (conflicts.Count > 0)
-            {
-                throw new Exception("Graph wasn't colored properly... Something went wrong...");
-            }
+            // var conflicts = solution.Nodes.Where(n => n.Neighbors.Any(nn => nn.ColorNumber == n.ColorNumber)).Select(n => n.Id).ToList();
+            // if (conflicts.Count > 0)
+            // {
+            //     throw new Exception("Graph wasn't colored properly... Something went wrong...");
+            // }
+            
+            var dict = new Dictionary<string, string>();
+            dict.Add("EmployeeBeesSize", employeeBeesSize.ToString());
+            dict.Add("EmployeeBeesNeighborhoodSize", employeeBeesNeighborSize.ToString());
+            dict.Add("OnLookerBeesSize", onLookerBeesSize.ToString());
+            dict.Add("OnLookerBeesNeighborhoodSize", onLookerBeesNeighborSize.ToString());
+            dict.Add("OnLookerBeesFavouredSolutionsNumber", onLookerBeesFavouredSolutionsNumber.ToString());
+            dict.Add("ScoutBeesSize", scoutBeesSize.ToString());
+            dict.Add("MaxCycles", maxCycles.ToString());
+            var jsonInfo = JsonSerializer.Serialize(dict);
+            
+            SaveResultToDatabase(
+                name: AlgorithmName.ABC,
+                coloredNodes: gg.GraphColors.ToList(),
+                time: elapsedTime,
+                jsonInfo: jsonInfo,
+                graph: g,
+                numberOfColors: gg.GraphColors.Distinct().Count());
 
-            string jsonInfo = $"{elapsedTime},{AlgorithmName.ABC},{graphId},{solution.NumberOfColorsInGraph},{employeeBeesSize},{employeeBeesNeighborSize},{onLookerBeesSize},{onLookerBeesNeighborSize},{scoutBeesSize},{maxCicles},{onLookerBeesFavouredSolutionsNumber}";
-            /*using (var stream = new MemoryStream())
-            {
-                using (var writer = new Utf8JsonWriter(stream))
-                {
-                    writer.WriteStartObject();
-                    writer.WriteNumber("graphId", graphId);
-                    writer.WriteNumber("employeeBeesSize", employeeBeesSize);
-                    writer.WriteNumber("employeeBeesNeighborSize", employeeBeesNeighborSize);
-                    writer.WriteNumber("onLookerBeesSize", onLookerBeesSize);
-                    writer.WriteNumber("onLookerBeesNeighborSize", onLookerBeesNeighborSize);
-                    writer.WriteNumber("scoutBeesSize", scoutBeesSize);
-                    writer.WriteNumber("maxCicles", maxCicles);
-                    writer.WriteNumber("onLookerBeesFavouredSolutionsNumber", onLookerBeesFavouredSolutionsNumber);
-                    writer.WriteEndObject();
-                }
-                jsonInfo = Encoding.UTF8.GetString(stream.ToArray());
-            }*/
+            return new AlgorithmResponse("ABC", gg.GraphColors);
+        }
 
-            var coloredNodesList = solution.GetColoredNodesList();
-            // save result to database
-            SaveResultToDatabase(AlgorithmName.ABC, coloredNodesList, elapsedTime, jsonInfo, g, solution.NumberOfColorsInGraph);
-
-            return new AlgorithmResponse(coloredNodesList);
+        public Task<AlgorithmResponse> PerformSimulatedAnnealing()
+        {
+            throw new NotImplementedException();
         }
 
         public async Task<AlgorithmResponse> PerformGreedyAlgorithm(int graphId)
         {
-            // var g = await _context.Graphs.Where(g => g.Id.Equals(graphId)).FirstAsync();
-            // var graph = _mapper.Map<GraphReadDto>(g);
-
-            // var watch = Stopwatch.StartNew();
-
-
-            var adjM = new List<List<int>>();
-            adjM.Add(new List<int>(new int[] {0,0,1,0,0}));
-            adjM.Add(new List<int>(new int[] {0,0,1,0,1}));
-            adjM.Add(new List<int>(new int[] {1,1,0,1,0}));
-            adjM.Add(new List<int>(new int[] {0,0,1,0,0}));
-            adjM.Add(new List<int>(new int[] {0,1,0,0,0}));
-            GraphDto gsd = new GraphDto(adjM);
-            // Greedy.Start(ref graph);
-            gsd.GraphColors = Greedy.Start(gsd.AdjacencyMatrix);
-
-            var ss = LargestFirst.Start(gsd.AdjacencyMatrix);
-
-            var sss = KempeChainNeighborhood.GetNeighbor(gsd.AdjacencyMatrix, gsd.GraphColors);
-
-            int x = 0;
-            // watch.Stop();
-            // var elapsedTime = watch.ElapsedMilliseconds;
+            var g = await _context.Graphs
+                .Where(g => g.Id.Equals(graphId))
+                .SingleAsync();
+            var gg = new GraphDto(g.AdjacencyMatrix);
+            
+            var watch = Stopwatch.StartNew();
+            gg.GraphColors = Greedy.Start(gg.AdjacencyMatrix);
+            watch.Stop();
+            var elapsedTime = watch.ElapsedMilliseconds;
 
             // dodatkowe sprawdzenie rozwiązania
             // var conflicts = graph.Nodes.Where(n => n.Neighbors.Any(nn => nn.ColorNumber == n.ColorNumber)).Select(n => n.Id).ToList();
             // if (conflicts.Count > 0)
             // {
-                // throw new Exception("Graph wasn't colored properly... Something went wrong...");
+            //     throw new Exception("Graph wasn't colored properly... Something went wrong...");
             // }
+            
+            SaveResultToDatabase(
+                name: AlgorithmName.Greedy,
+                coloredNodes: gg.GraphColors.ToList(),
+                time: elapsedTime,
+                jsonInfo: "",
+                graph: g,
+                numberOfColors: gg.GraphColors.Distinct().Count());
 
-            // string jsonInfo = $"{elapsedTime},{AlgorithmName.Greedy},{graphId},{graph.NumberOfColorsInGraph}";
-            // var coloredNodesList = graph.GetColoredNodesList();
-            // save result to database
-            // SaveResultToDatabase(AlgorithmName.Greedy, coloredNodesList, elapsedTime, jsonInfo, g, graph.NumberOfColorsInGraph);
-
-            // var response = new AlgorithmResponse(coloredNodesList);
-            // return response;
-            throw new NotImplementedException();
+            var response = new AlgorithmResponse("Greedy", gg.GraphColors);
+            return response;
         }
 
-        public Task<AlgorithmResponse> PerformLargestFirstAlgorithm(int graphId)
+        public async Task<AlgorithmResponse> PerformLargestFirstAlgorithm(int graphId)
         {
-            var g = _context.Graphs.Where(g => g.Id.Equals(graphId)).FirstOrDefault();
-            var graph = _mapper.Map<GraphReadDto>(g);
-
+            var g = await _context.Graphs
+                .Where(g => g.Id.Equals(graphId))
+                .SingleAsync();
+            //TODO refactor mapping for new GraphDto
+            var gg = new GraphDto(g.AdjacencyMatrix);
+            
             var watch = Stopwatch.StartNew();
-            LargestFirst.Start(ref graph);
+            gg.GraphColors = LargestFirst.Start(gg.AdjacencyMatrix);
             watch.Stop();
             var elapsedTime = watch.ElapsedMilliseconds;
 
             // dodatkowe sprawdzenie rozwiązania
-            var conflicts = graph.Nodes.Where(n => n.Neighbors.Any(nn => nn.ColorNumber == n.ColorNumber)).Select(n => n.Id).ToList();
-            if (conflicts.Count > 0)
-            {
-                throw new Exception("Graph wasn't colored properly... Something went wrong...");
-            }
+            // var conflicts = graph.Nodes.Where(n => n.Neighbors.Any(nn => nn.ColorNumber == n.ColorNumber)).Select(n => n.Id).ToList();
+            // if (conflicts.Count > 0)
+            // {
+            //     throw new Exception("Graph wasn't colored properly... Something went wrong...");
+            // }
+            
+            SaveResultToDatabase(
+                name: AlgorithmName.LargestFirst,
+                coloredNodes: gg.GraphColors.ToList(),
+                time: elapsedTime,
+                jsonInfo: "",
+                graph: g,
+                numberOfColors: gg.GraphColors.Distinct().Count());
 
-            string jsonInfo = $"{elapsedTime},{AlgorithmName.LargestFirst},{graphId},{graph.NumberOfColorsInGraph}";
-            var coloredNodesList = graph.GetColoredNodesList();
-            // save result to database
-            SaveResultToDatabase(AlgorithmName.LargestFirst, coloredNodesList, elapsedTime, jsonInfo, g, graph.NumberOfColorsInGraph);
-
-            var response = new AlgorithmResponse(coloredNodesList);
-            return Task.FromResult(response);
+            var response = new AlgorithmResponse("GreedyLargestFirst", gg.GraphColors);
+            return response;
         }
 
         private void SaveResultToDatabase(AlgorithmName name, List<int> coloredNodes, long time, string jsonInfo, Graph graph, int numberOfColors)

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Threading.Tasks;
+using GraphColoring.Application.Exceptions;
 using Microsoft.AspNetCore.Http;
 
 namespace GraphColoring.API.Middleware
@@ -12,6 +13,11 @@ namespace GraphColoring.API.Middleware
             try
             {
                 await next.Invoke(context);
+            }
+            catch (BadRequestException e)
+            {
+                context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+                await context.Response.WriteAsync(e.Message);
             }
             catch (Exception)
             {

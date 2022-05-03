@@ -8,8 +8,7 @@ namespace GraphColoring.Application
     {
         public MappingProfile()
         {
-            CreateMap<Graph, GraphReadDto>()
-                .AfterMap((s, d) => d.ProcessMatrix());
+            
         }
     }
 }

@@ -12,5 +12,8 @@ namespace GraphColoring.Application.Interfaces.Services
 
         Task<AlgorithmResponse> PerformABCAlgorithm(int graphId, int employeeBeesSize, int employeeBeesNeighborSize, int onLookerBeesSize, 
             int onLookerBeesNeighborSize, int scoutBeesSize, int maxCycles, int onLookerBeesFavouredSolutionsNumber);
+
+        Task<AlgorithmResponse> PerformSimulatedAnnealing();
+
     }
 }

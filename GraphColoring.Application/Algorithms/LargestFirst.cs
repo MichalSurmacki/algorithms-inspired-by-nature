@@ -1,18 +1,10 @@
-﻿using System;
-using GraphColoring.Application.Dtos.Graphs;
-using GraphColoring.Application.Extensions;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 
 namespace GraphColoring.Application.Algorithms
 {
     public static class LargestFirst
     {
-        public static void Start(ref GraphReadDto graph)
-        {
-            throw new NotImplementedException();
-        }
-
         public static int[] Start(List<List<int>> adjacencyMatrix)
         {
             var graphColors = new int[adjacencyMatrix.Count];

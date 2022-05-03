@@ -14,10 +14,5 @@ namespace GraphColoring.Domain.Entities
             Name = name;
             AdjacencyMatrix = adjacencyMatrix;
         }
-
-        public Graph()
-        {
-        }
-        
     }
 }

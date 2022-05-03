@@ -1,14 +1,14 @@
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
-using GraphColoring.Application.Dtos.Graphs.Requests;
-using GraphColoring.Application.Dtos.Graphs.Responses;
 
 namespace GraphColoring.Application.Interfaces.Services
 {
     public interface IGraphService
     {
-        Task<CreateGraphResponse> CreateGraph(CreateGraphRequest request);
-        Task<CreateGraphResponse> LoadGraphFromDIMACS(StreamReader streamReaderFileDIMACS, string graphName);
-        Task<GetGraphByIdResponse> GetGraphById(int id);
+        Task<int> CreateGraph(List<List<int>> adjacencyMatrix, string name);
+        Task<int> LoadGraphFromDIMACS(StreamReader streamReaderFileDIMACS, string graphName);
+        Task<List<List<int>>> GetGraphById(int id);
+        Task<int> GenereteRandomGraph(int size, int density);
     }
 }
