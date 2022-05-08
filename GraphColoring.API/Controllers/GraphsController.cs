@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Threading.Tasks;
+using GraphColoring.Application.Dtos.Graphs;
 
 namespace GraphColoring.API.Controllers
 {
@@ -21,9 +22,9 @@ namespace GraphColoring.API.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateGraph([FromBody]List<List<int>> adjacencyMatrix, [FromBody] string name)
+        public async Task<IActionResult> CreateGraph([FromBody] CreateGraphRequest createGraphRequest)
         {
-            var response = await _graphService.CreateGraph(adjacencyMatrix, name);
+            var response = await _graphService.CreateGraph(createGraphRequest.AdjacencyMatrix, createGraphRequest.Name);
             return Ok(response);
         }
 
