@@ -7,7 +7,7 @@ namespace GraphColoring.Application.Algorithms.ABC
 {
     public static class ABC
     {
-        public static int[] BestSolution = null;
+        public static int[] BestSolution;
 
         public static async Task<int[]> Start(List<List<int>> adjacencyMatrix, int employeeBeesSize, int employeeNeighLookNmb, 
             int onLookerBeesSize, int onLookerNeighLookNmb, int scoutBeesSize, int maxCycles, int onLookerFavouredSolutionsNumber = 0)
@@ -16,6 +16,10 @@ namespace GraphColoring.Application.Algorithms.ABC
             for (var i = 0; i < employeeBeesSize; i++)
             {
                 var initialSolution = Greedy.Start(adjacencyMatrix);
+                if (BestSolution == null || initialSolution.Distinct().Count() < BestSolution.Distinct().Count())
+                {
+                    BestSolution = initialSolution.ToArray();
+                }
                 employeeBees.Add(new EmployeeBee(employeeNeighLookNmb, adjacencyMatrix, initialSolution));
             }
             
@@ -35,19 +39,12 @@ namespace GraphColoring.Application.Algorithms.ABC
             {
                 //Start employeeBees
                 var employeeBeeTasks = employeeBees
-                    .Select(employeeBee => employeeBee.Action())
+                    .Select(e => new Task( () => e.Action()))
                     .ToList();
                 employeeBeeTasks.ForEach(t => t.Start());
+                // employeeBeeTasks[0].Start();
                 await Task.WhenAll(employeeBeeTasks);
-                var employeeBeesChangesCount = 0;
-                for (var j = employeeBees.Count - 1; j >= 0 ; j--)
-                {
-                    if (employeeBees[j].IsChangeToScoutNecessary)
-                    {
-                        employeeBees.RemoveAt(j);
-                        employeeBeesChangesCount++;
-                    }
-                }
+                
                 var solutions = employeeBees
                     .Select(eb => new
                     {
@@ -57,10 +54,34 @@ namespace GraphColoring.Application.Algorithms.ABC
                     .Select(x => x.Solution)
                     .ToList();
 
-                var firstSolution = solutions.First();
-                if (firstSolution.Distinct().Count() < BestSolution.Distinct().Count() || BestSolution == null)
+                //when employeed bees didnt fount better solutions than initial
+                if (solutions.Count == 0)
                 {
-                    BestSolution = firstSolution;
+                    solutions = employeeBees
+                        .Select(e => new
+                        {
+                            e.InitialSolutionColorsCount,
+                            e.InitialSolution
+                        })
+                        .OrderBy(x => x.InitialSolutionColorsCount)
+                        .Select(x => x.InitialSolution)
+                        .ToList();
+                }
+                
+                var firstSolution = solutions.First();
+                if (firstSolution.Distinct().Count() < BestSolution.Distinct().Count())
+                {
+                    BestSolution = firstSolution.ToArray();
+                }
+                
+                var employeeBeesChangesCount = 0;
+                for (var j = employeeBees.Count - 1; j >= 0 ; j--)
+                {
+                    if (employeeBees[j].IsChangeToScoutNecessary)
+                    {
+                        employeeBees.RemoveAt(j);
+                        employeeBeesChangesCount++;
+                    }
                 }
                 //End employeeBees
 
@@ -82,7 +103,9 @@ namespace GraphColoring.Application.Algorithms.ABC
                 var onLookerBeeTasks = new List<Task>();
                 for (var j = 0; j < onLookerBeesChunks.Count; j++)
                 {
-                    onLookerBeeTasks.AddRange(onLookerBeesChunks[j].Select(onLookerBee => onLookerBee.Action(solutions[j])));
+                    var index = j;
+                    // onLookerBeeTasks.AddRange(onLookerBeesChunks[j].Select(onLookerBee => onLookerBee.Action(solutions[j])));
+                    onLookerBeeTasks.AddRange(onLookerBeesChunks[j].Select(o => new Task(() => o.Action(solutions[index]))));
                     onLookerBeeTasks.ForEach(t => t.Start());
                 }
                 await Task.WhenAll(onLookerBeeTasks);
@@ -94,12 +117,13 @@ namespace GraphColoring.Application.Algorithms.ABC
                 var onLookerBeesFirstSolutions = onLookerBeesSolutions.First();
                 if (BestSolution.Distinct().Count() > onLookerBeesFirstSolutions.Distinct().Count())
                 {
-                    BestSolution = onLookerBeesFirstSolutions;
+                    BestSolution = onLookerBeesFirstSolutions.ToArray();
                 }
                 //End onLookerBees
 
                 //Start scoutBees
-                var scoutBeesTasks = scoutBees.Select(scoutBee => scoutBee.Action(adjacencyMatrix)).ToList();
+                // var scoutBeesTasks = scoutBees.Select(scoutBee => scoutBee.Action(adjacencyMatrix)).ToList();
+                var scoutBeesTasks = scoutBees.Select(s => new Task(() => s.Action(adjacencyMatrix))).ToList();
                 scoutBeesTasks.ForEach(t => t.Start());
                 await Task.WhenAll(scoutBeesTasks);
                 foreach (var scout in scoutBees)
@@ -107,7 +131,7 @@ namespace GraphColoring.Application.Algorithms.ABC
                     if (scout.Solution.Distinct().Count() <= BestSolution.Distinct().Count())
                     {
                         employeeBees.Add(new EmployeeBee(employeeNeighLookNmb, adjacencyMatrix, scout.Solution));
-                        BestSolution = scout.Solution;
+                        BestSolution = scout.Solution.ToArray();
                     }
                 }
                 //End scoutBees

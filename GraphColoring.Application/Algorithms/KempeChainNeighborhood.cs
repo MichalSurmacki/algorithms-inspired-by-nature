@@ -35,18 +35,21 @@ namespace GraphColoring.Application.Algorithms
 
             //change nodes colors
             graphColorsCopy[nodeIndexForColorChange] = nextColorForChange;
-            graphColorsCopy[neighbourIndexForColorChange] = currentColorForChange;
+            // graphColorsCopy[neighbourIndexForColorChange] = currentColorForChange;
             
             //get conflicts 
             var neighboursIndexesWithColorConflict =
                 neighbourIndexes.Where(ni => graphColorsCopy[ni] == nextColorForChange)
                     .ToList();
 
+            var newNeighboursList = neighboursIndexesWithColorConflict;
+            
             var count = neighboursIndexesWithColorConflict.Count;
             while (count > 0)
             {
-                var newNeighboursList = new List<int>();
-                foreach (var neighbourIndex in neighboursIndexesWithColorConflict)
+                var neighboursList = newNeighboursList;
+                newNeighboursList = new List<int>();
+                foreach (var neighbourIndex in neighboursList)
                 {
                     //resolve conflicts
                     graphColorsCopy[neighbourIndex] = currentColorForChange;
@@ -54,11 +57,10 @@ namespace GraphColoring.Application.Algorithms
                     newNeighboursList.AddRange(
                         adjacencyMatrix[neighbourIndex]
                             .Select((r, i) => new {r, i})
-                            .Where(x => x.r == 1 && graphColorsCopy[x.i] == currentColorForChange)
+                            .Where(x => x.r == 1 && graphColorsCopy[x.i] == currentColorForChange && !newNeighboursList.Contains(x.i))
                             .Select(x => x.i)
                             .ToList());
                 }
-
                 count = newNeighboursList.Count;
                 (currentColorForChange, nextColorForChange) = (nextColorForChange, currentColorForChange);
             }
