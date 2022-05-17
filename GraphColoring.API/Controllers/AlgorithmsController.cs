@@ -27,6 +27,14 @@ namespace GraphColoring.API.Controllers
             var response = await _algorithmService.PerformGreedyAlgorithm(graphId);
             return Ok(response);
         }
+        
+        [HttpGet]
+        [Route("LowestFirst")]
+        public async Task<IActionResult> StartLowestFirstAlgorithm([FromQuery] int graphId)
+        {
+            var response = await _algorithmService.PerformLowestFirstAlgorithm(graphId);
+            return Ok(response);
+        }
 
         [HttpGet]
         [Route("ABC")]

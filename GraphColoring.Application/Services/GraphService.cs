@@ -102,6 +102,7 @@ namespace GraphColoring.Application.Services
                         if (adjacencyMatrix[i][j] == 0)
                         {
                             adjacencyMatrix[j][i] = 1;
+                            adjacencyMatrix[i][j] = 1;
                         }
                     }
                     catch(Exception e)

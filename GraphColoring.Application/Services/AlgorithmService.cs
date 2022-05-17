@@ -142,6 +142,38 @@ namespace GraphColoring.Application.Services
             var response = new AlgorithmResponse("GreedyLargestFirst", gg.GraphColors);
             return response;
         }
+        
+        public async Task<AlgorithmResponse> PerformLowestFirstAlgorithm(int graphId)
+        {
+            var g = await _context.Graphs
+                .Where(g => g.Id.Equals(graphId))
+                .SingleAsync();
+            //TODO refactor mapping for new GraphDto
+            var gg = new GraphDto(g.AdjacencyMatrix);
+            
+            var watch = Stopwatch.StartNew();
+            gg.GraphColors = LowestFirst.Start(gg.AdjacencyMatrix);
+            watch.Stop();
+            var elapsedTime = watch.ElapsedMilliseconds;
+
+            // dodatkowe sprawdzenie rozwiązania
+            // var conflicts = graph.Nodes.Where(n => n.Neighbors.Any(nn => nn.ColorNumber == n.ColorNumber)).Select(n => n.Id).ToList();
+            // if (conflicts.Count > 0)
+            // {
+            //     throw new Exception("Graph wasn't colored properly... Something went wrong...");
+            // }
+            
+            SaveResultToDatabase(
+                name: AlgorithmName.LowestFirst,
+                coloredNodes: gg.GraphColors.ToList(),
+                time: elapsedTime,
+                jsonInfo: "",
+                graph: g,
+                numberOfColors: gg.GraphColors.Distinct().Count());
+
+            var response = new AlgorithmResponse("GreedyLowestFirst", gg.GraphColors);
+            return response;
+        }
 
         private void SaveResultToDatabase(AlgorithmName name, List<int> coloredNodes, long time, string jsonInfo, Graph graph, int numberOfColors)
         {
