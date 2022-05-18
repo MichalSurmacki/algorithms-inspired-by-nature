@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using GraphColoring.Application.Extensions;
 
 namespace GraphColoring.Application.Algorithms.ABC
 {
@@ -23,8 +24,9 @@ namespace GraphColoring.Application.Algorithms.ABC
             {
                 var newSolution = KempeChainNeighborhood.GetNeighbor(_adjacencyMatrix, initialSolution);
                 var newSolutionColorsCount = newSolution.Distinct().ToList().Count;
-                if (newSolutionColorsCount < initialSolutionColorsCount)
+                if (newSolutionColorsCount <= initialSolutionColorsCount)
                 {
+                    if (Solution != null && newSolution.Matching(Solution)) continue;
                     Solution = newSolution;
                 }
             }
