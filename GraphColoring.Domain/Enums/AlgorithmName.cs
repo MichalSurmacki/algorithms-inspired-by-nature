@@ -7,5 +7,6 @@
         LargestFirst = 1,
         ABC = 2,
         LowestFirst = 3,
+        SimulatedAnnealing = 4,
     }
 }

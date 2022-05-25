@@ -21,6 +21,22 @@ namespace GraphColoring.API.Controllers
         }
 
         [HttpGet]
+        [Route("Info")]
+        public async Task<IActionResult> GetGraphInfo([FromQuery] int graphId)
+        {
+            var response = await _algorithmService.GetGraphInfo(graphId);
+            return Ok(response);
+        }
+        
+        [HttpGet]
+        [Route("Work")]
+        public async Task<IActionResult> Work()
+        {
+            await _algorithmService.Work();
+            return Ok();
+        }
+        
+        [HttpGet]
         [Route("Greedy")]
         public async Task<IActionResult> PerformGreedyAlgorithm([FromQuery] int graphId)
         {
@@ -52,6 +68,15 @@ namespace GraphColoring.API.Controllers
         public async Task<IActionResult> StartLargestFirstAlgorithm([FromQuery] int graphId)
         {
             var response = await _algorithmService.PerformLargestFirstAlgorithm(graphId);
+            return Ok(response);
+        }
+        
+        [HttpGet]
+        [Route("SimulatedAnnealing")]
+        public async Task<IActionResult> StartSimulatedAnnealingAlgorithm([FromQuery] int graphId, [FromQuery] int coolingParameter, 
+            [FromQuery] int maxCycles, [FromQuery] int neighbourhoodLookupNumber)
+        {
+            var response = await _algorithmService.PerformSimulatedAnnealing(graphId, coolingParameter, maxCycles, neighbourhoodLookupNumber);
             return Ok(response);
         }
     }

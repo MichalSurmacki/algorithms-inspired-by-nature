@@ -10,9 +10,11 @@ using GraphColoring.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using GraphColoring.Application.Algorithms.SimulatedAnnealing;
 using GraphColoring.Application.Exceptions;
 using Microsoft.EntityFrameworkCore;
 
@@ -47,13 +49,6 @@ namespace GraphColoring.Application.Services
             watch.Stop();
             var elapsedTime = watch.ElapsedMilliseconds;
 
-            // dodatkowe sprawdzenie rozwiązania
-            // var conflicts = solution.Nodes.Where(n => n.Neighbors.Any(nn => nn.ColorNumber == n.ColorNumber)).Select(n => n.Id).ToList();
-            // if (conflicts.Count > 0)
-            // {
-            //     throw new Exception("Graph wasn't colored properly... Something went wrong...");
-            // }
-            
             var dict = new Dictionary<string, string>();
             dict.Add("EmployeeBeesSize", employeeBeesSize.ToString());
             dict.Add("EmployeeBeesNeighborhoodSize", employeeBeesNeighborSize.ToString());
@@ -75,9 +70,120 @@ namespace GraphColoring.Application.Services
             return new AlgorithmResponse("ABC", gg.GraphColors);
         }
 
-        public Task<AlgorithmResponse> PerformSimulatedAnnealing()
+        public async Task<AlgorithmResponse> PerformSimulatedAnnealing(int graphId, int coolingParameter, int maxCycles, int neighbourhoodLookupNumber)
         {
-            throw new NotImplementedException();
+            var g = await _context.Graphs.Where(g => g.Id.Equals(graphId)).SingleAsync();
+            var gg = new GraphDto(g.AdjacencyMatrix);
+            
+            var watch = Stopwatch.StartNew();
+            gg.GraphColors = SimulatedAnnealing.Start(gg.AdjacencyMatrix, coolingParameter, maxCycles, neighbourhoodLookupNumber);
+            watch.Stop();
+            var elapsedTime = watch.ElapsedMilliseconds;
+            
+            var dict = new Dictionary<string, string>();
+            dict.Add("CoolingParameter", coolingParameter.ToString());
+            dict.Add("NeighbourhoodLookupNumber", neighbourhoodLookupNumber.ToString());
+            dict.Add("MaxCycles", maxCycles.ToString());
+            var jsonInfo = JsonSerializer.Serialize(dict);
+            
+            SaveResultToDatabase(
+                name: AlgorithmName.SimulatedAnnealing,
+                coloredNodes: gg.GraphColors.ToList(),
+                time: elapsedTime,
+                jsonInfo: jsonInfo,
+                graph: g,
+                numberOfColors: gg.GraphColors.Distinct().Count());
+            return new AlgorithmResponse("SA", gg.GraphColors);
+        }
+        
+        //TODO delete
+        public async Task<List<float>> GetGraphInfo(int graphId)
+        {
+            var g = await _context.Graphs.Where(g => g.Id.Equals(graphId)).SingleAsync();
+            var neighboursCountedList = g.AdjacencyMatrix
+                .Select(row => row.Where(i => i == 1).ToList().Count)
+                .ToList();
+            var ttt = new List<float>();
+            ttt.Add(neighboursCountedList.Max());
+            ttt.Add(neighboursCountedList.Min());
+            ttt.Add((float)neighboursCountedList.Average());
+            //liczba wszystkich do liczby mozliwych
+            var xd = (float)(neighboursCountedList.Count * (neighboursCountedList.Count - 1)) / 2;
+            var gg = (float)neighboursCountedList.Sum();
+            ttt.Add((gg / xd));
+            return (ttt);
+        }
+        
+        //TODO delete
+        public async Task Work()
+        {
+            for (var i = 220; i < 251; i++)
+            {
+                var g = await _context.Graphs
+                                .Where(g => g.Id.Equals(i))
+                                .SingleAsync();
+                var gp = "D:/Desktop/ss/Greedy.txt";
+                var maxp = "D:/Desktop/ss/Max.txt";
+                var minp = "D:/Desktop/ss/Min.txt";
+                using (StreamWriter sw = File.AppendText(gp))
+                {
+                    sw.Write(g.Name);
+                    sw.Write(',');
+                }
+                using (StreamWriter sw = File.AppendText(maxp))
+                {
+                    sw.Write(g.Name);
+                    sw.Write(',');
+                }
+                using (StreamWriter sw = File.AppendText(minp))
+                {
+                    sw.Write(g.Name);
+                    sw.Write(',');
+                }
+                var fff = _context.AlgorithmResults.Where(x => x.Graph.Id == i).ToList();
+                foreach (var r in fff)
+                {
+                    if (r.Name == AlgorithmName.Greedy)
+                    {
+                        using (StreamWriter sw = File.AppendText(gp))
+                        {
+                            var ddd = r.NumberOfColors.ToString();
+                            sw.Write(ddd);
+                            sw.Write(',');
+                        }    
+                    }
+                    if(r.Name == AlgorithmName.LargestFirst)
+                    {
+                        using (StreamWriter sw = File.AppendText(maxp))
+                        {
+                            var ddd = r.NumberOfColors.ToString();
+                            sw.Write(ddd);
+                            sw.Write(',');
+                        }
+                    }
+                    if (r.Name == AlgorithmName.LowestFirst)
+                    {
+                        using (StreamWriter sw = File.AppendText(minp))
+                        {
+                            var ddd = r.NumberOfColors.ToString();
+                            sw.Write(ddd);
+                            sw.Write(',');
+                        }
+                    }
+                }
+                using (StreamWriter sw = File.AppendText(gp))
+                {
+                    sw.Write("\n");
+                }
+                using (StreamWriter sw = File.AppendText(maxp))
+                {
+                    sw.Write("\n");
+                }
+                using (StreamWriter sw = File.AppendText(minp))
+                {
+                    sw.Write("\n");
+                }
+            }
         }
 
         public async Task<AlgorithmResponse> PerformGreedyAlgorithm(int graphId)
@@ -92,13 +198,6 @@ namespace GraphColoring.Application.Services
             watch.Stop();
             var elapsedTime = watch.ElapsedMilliseconds;
 
-            // dodatkowe sprawdzenie rozwiązania
-            // var conflicts = graph.Nodes.Where(n => n.Neighbors.Any(nn => nn.ColorNumber == n.ColorNumber)).Select(n => n.Id).ToList();
-            // if (conflicts.Count > 0)
-            // {
-            //     throw new Exception("Graph wasn't colored properly... Something went wrong...");
-            // }
-            
             SaveResultToDatabase(
                 name: AlgorithmName.Greedy,
                 coloredNodes: gg.GraphColors.ToList(),
@@ -124,13 +223,6 @@ namespace GraphColoring.Application.Services
             watch.Stop();
             var elapsedTime = watch.ElapsedMilliseconds;
 
-            // dodatkowe sprawdzenie rozwiązania
-            // var conflicts = graph.Nodes.Where(n => n.Neighbors.Any(nn => nn.ColorNumber == n.ColorNumber)).Select(n => n.Id).ToList();
-            // if (conflicts.Count > 0)
-            // {
-            //     throw new Exception("Graph wasn't colored properly... Something went wrong...");
-            // }
-            
             SaveResultToDatabase(
                 name: AlgorithmName.LargestFirst,
                 coloredNodes: gg.GraphColors.ToList(),
@@ -156,13 +248,6 @@ namespace GraphColoring.Application.Services
             watch.Stop();
             var elapsedTime = watch.ElapsedMilliseconds;
 
-            // dodatkowe sprawdzenie rozwiązania
-            // var conflicts = graph.Nodes.Where(n => n.Neighbors.Any(nn => nn.ColorNumber == n.ColorNumber)).Select(n => n.Id).ToList();
-            // if (conflicts.Count > 0)
-            // {
-            //     throw new Exception("Graph wasn't colored properly... Something went wrong...");
-            // }
-            
             SaveResultToDatabase(
                 name: AlgorithmName.LowestFirst,
                 coloredNodes: gg.GraphColors.ToList(),
