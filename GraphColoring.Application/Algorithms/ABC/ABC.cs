@@ -7,18 +7,17 @@ namespace GraphColoring.Application.Algorithms.ABC
 {
     public static class ABC
     {
-        public static int[] BestSolution;
-
         public static async Task<int[]> Start(List<List<int>> adjacencyMatrix, int employeeBeesSize, int employeeNeighLookNmb, 
             int onLookerBeesSize, int onLookerNeighLookNmb, int scoutBeesSize, int maxCycles, int onLookerFavouredSolutionsNumber = 0)
         {
+            int[] bestSolution = null;
             var employeeBees = new List<EmployeeBee>();
             for (var i = 0; i < employeeBeesSize; i++)
             {
                 var initialSolution = Greedy.Start(adjacencyMatrix);
-                if (BestSolution == null || initialSolution.Distinct().Count() < BestSolution.Distinct().Count())
+                if (bestSolution == null || initialSolution.Distinct().Count() < bestSolution.Distinct().Count())
                 {
-                    BestSolution = initialSolution.ToArray();
+                    bestSolution = initialSolution.ToArray();
                 }
                 employeeBees.Add(new EmployeeBee(employeeNeighLookNmb, adjacencyMatrix, initialSolution));
             }
@@ -69,9 +68,9 @@ namespace GraphColoring.Application.Algorithms.ABC
                 // }
                 
                 var firstSolution = solutions.First();
-                if (firstSolution.Distinct().Count() <= BestSolution.Distinct().Count())
+                if (firstSolution.Distinct().Count() <= bestSolution.Distinct().Count())
                 {
-                    BestSolution = firstSolution;
+                    bestSolution = firstSolution;
                 }
                 
                 var employeeBeesChangesCount = 0;
@@ -104,7 +103,6 @@ namespace GraphColoring.Application.Algorithms.ABC
                 for (var j = 0; j < onLookerBeesChunks.Count; j++)
                 {
                     var index = j;
-                    // onLookerBeeTasks.AddRange(onLookerBeesChunks[j].Select(onLookerBee => onLookerBee.Action(solutions[j])));
                     var tasks = onLookerBeesChunks[j].Select(o => new Task(() => o.Action(solutions[index]))).ToList();
                     onLookerBeeTasks.AddRange(tasks);
                     tasks.ForEach(t => t.Start());
@@ -116,14 +114,13 @@ namespace GraphColoring.Application.Algorithms.ABC
                     .OrderBy(o => o.Distinct().Count())
                     .ToList();
                 var onLookerBeesFirstSolution = onLookerBeesSolutions.FirstOrDefault();
-                if (onLookerBeesFirstSolution != null && BestSolution.Distinct().Count() >= onLookerBeesFirstSolution.Distinct().Count())
+                if (onLookerBeesFirstSolution != null && bestSolution.Distinct().Count() >= onLookerBeesFirstSolution.Distinct().Count())
                 {
-                    BestSolution = onLookerBeesFirstSolution;
+                    bestSolution = onLookerBeesFirstSolution;
                 }
                 //End onLookerBees
 
                 //Start scoutBees
-                // var scoutBeesTasks = scoutBees.Select(scoutBee => scoutBee.Action(adjacencyMatrix)).ToList();
                 var scoutBeesTasks = scoutBees.Select(s => new Task(() => s.Action(adjacencyMatrix))).ToList();
                 scoutBeesTasks.ForEach(t => t.Start());
                 await Task.WhenAll(scoutBeesTasks);
@@ -131,18 +128,18 @@ namespace GraphColoring.Application.Algorithms.ABC
                 for (var j = scoutBees.Count - 1; j >= 0 ; j--)
                 {
                     employeeBees.Add(new EmployeeBee(employeeNeighLookNmb, adjacencyMatrix, scoutBees[j].Solution));
-                    if (scoutBees[j].Solution.Distinct().Count() <= BestSolution.Distinct().Count())
+                    if (scoutBees[j].Solution.Distinct().Count() <= bestSolution.Distinct().Count())
                     {
-                        BestSolution = scoutBees[j].Solution.ToArray();
+                        bestSolution = scoutBees[j].Solution.ToArray();
                     }
                     scoutBees.RemoveAt(j);
                 }
                 // foreach (var scout in scoutBees)
                 // {
-                //     if (scout.Solution.Distinct().Count() <= BestSolution.Distinct().Count())
+                //     if (scout.Solution.Distinct().Count() <= bestSolution.Distinct().Count())
                 //     {
                 //         employeeBees.Add(new EmployeeBee(employeeNeighLookNmb, adjacencyMatrix, scout.Solution));
-                //         BestSolution = scout.Solution.ToArray();
+                //         bestSolution = scout.Solution.ToArray();
                 //     }
                 // }
                 //End scoutBees
@@ -153,7 +150,7 @@ namespace GraphColoring.Application.Algorithms.ABC
                     scoutBees.Add(new ScoutBee());
                 }
             }
-            return BestSolution;
+            return bestSolution;
         }
     }
 }
